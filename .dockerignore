@@ -1,0 +1,6 @@
+frontend
+backend/node_modules
+backend/.env
+**/.git
+**/*.md
+!profil-curation-newsletters.md

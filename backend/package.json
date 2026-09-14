@@ -1,0 +1,24 @@
+{
+  "name": "newsletter-digest-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "gmail:auth": "node scripts/gmail-get-refresh-token.js",
+    "vapid:generate": "node scripts/generate-vapid-keys.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.10.0",
+    "@google/genai": "^0.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "googleapis": "^144.0.0",
+    "web-push": "^3.6.7"
+  }
+}
