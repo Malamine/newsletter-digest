@@ -11,6 +11,45 @@ function escapeHtml(str = '') {
   return str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// --- Bannière d'installation PWA ---
+(function setupInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  const btn = document.getElementById('install-btn');
+  const text = document.getElementById('install-banner-text');
+
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) return; // déjà installée, rien à faire
+
+  const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+  if (isIos) {
+    text.textContent = "Installe l'app : bouton Partager (⬆️) → \"Sur l'écran d'accueil\".";
+    btn.hidden = true;
+    banner.hidden = false;
+    return;
+  }
+
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.hidden = false;
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    banner.hidden = true;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    banner.hidden = true;
+  });
+})();
+
 // --- Onglets ---
 document.querySelectorAll('.tab').forEach((tab) => {
   tab.addEventListener('click', () => {
@@ -285,14 +324,23 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 const notifBtn = document.getElementById('notif-btn');
+const pushSupported = typeof Notification !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+
+if (!pushSupported) {
+  // Safari iOS (hors PWA installée) n'expose pas `Notification` du tout — y accéder
+  // plantait tout le script au chargement, empêchant même le digest/quiz de s'afficher.
+  notifBtn.disabled = true;
+  notifBtn.title = "Notifications non supportées sur ce navigateur (sur iPhone : installe d'abord l'app via Partager → Sur l'écran d'accueil, iOS 16.4+)";
+}
 
 function updateNotifBtnState() {
+  if (!pushSupported) return;
   notifBtn.classList.toggle('active', Notification.permission === 'granted');
 }
 
 notifBtn.addEventListener('click', async () => {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    alert('Les notifications ne sont pas supportées sur ce navigateur.');
+  if (!pushSupported) {
+    alert("Les notifications ne sont pas supportées sur ce navigateur. Sur iPhone, installe d'abord l'app (Partager → Sur l'écran d'accueil), iOS 16.4 minimum.");
     return;
   }
 
