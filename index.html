@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e1b4b">
+<title>Digest</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="week-tag" id="week-tag">—</span>
+      <h1>Digest de la semaine</h1>
+    </div>
+    <button class="icon-btn" id="notif-btn" aria-label="Notifications" title="Activer les notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    </button>
+  </header>
+
+  <section class="stats-row">
+    <div class="glass-card stat-card">
+      <span class="stat-value" id="stat-items">–</span>
+      <span class="stat-label">items retenus</span>
+    </div>
+    <div class="glass-card stat-card">
+      <span class="stat-value" id="stat-signal">–</span>
+      <span class="stat-label">signal fort</span>
+    </div>
+    <div class="glass-card stat-card">
+      <span class="stat-value" id="stat-quiz">–</span>
+      <span class="stat-label">questions quiz</span>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="digest">Digest</button>
+    <button class="tab" data-tab="quiz">Quiz</button>
+  </nav>
+
+  <section id="panel-digest" class="panel active">
+    <div class="filter-bar glass-card" id="filter-bar" hidden>
+      <div class="filter-row">
+        <button class="filter-chip" id="filter-signal" data-active="false">⚡ Signal fort</button>
+        <div class="filter-score">
+          <label for="filter-min-score">Score min</label>
+          <input type="range" id="filter-min-score" min="0" max="10" step="1" value="0">
+          <span id="filter-min-score-value">0</span>
+        </div>
+      </div>
+      <div class="filter-row filter-categories" id="filter-categories"></div>
+    </div>
+    <div id="digest-list"></div>
+    <p class="empty-state" id="digest-empty" hidden>Pas encore de digest pour cette semaine — repasse après le prochain run (tous les lundis matin), ou une fois le premier run manuel lancé.</p>
+    <p class="empty-state" id="digest-loading">Chargement du digest…</p>
+  </section>
+
+  <section id="panel-quiz" class="panel">
+    <div id="quiz-list"></div>
+    <p class="empty-state" id="quiz-empty" hidden>Pas encore de quiz pour cette semaine.</p>
+    <p class="empty-state" id="quiz-loading">Chargement du quiz…</p>
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
