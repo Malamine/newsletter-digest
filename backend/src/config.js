@@ -24,12 +24,10 @@ export const config = {
     label: process.env.GMAIL_LABEL || 'NEWSLETTER'
   },
 
-  cronSecret: required('CRON_SECRET', process.env.CRON_SECRET),
-
   vapid: {
     publicKey: process.env.VAPID_PUBLIC_KEY,
     privateKey: process.env.VAPID_PRIVATE_KEY,
-    contactEmail: process.env.VAPID_CONTACT_EMAIL || 'mailto:malamin.tounkara.tr@gmail.com'
+    contactEmail: required('VAPID_CONTACT_EMAIL', process.env.VAPID_CONTACT_EMAIL)
   },
 
   port: process.env.PORT || 8080

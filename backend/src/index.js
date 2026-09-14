@@ -5,7 +5,6 @@ import { digestRouter } from './routes/digest.js';
 import { quizRouter } from './routes/quiz.js';
 import { itemsRouter } from './routes/items.js';
 import { pushRouter } from './routes/push.js';
-import { cronRouter } from './routes/cron.js';
 
 const app = express();
 
@@ -33,7 +32,6 @@ app.use('/digest', digestRouter);
 app.use('/quiz', quizRouter);
 app.use('/items', itemsRouter);
 app.use('/push', pushRouter);
-app.use('/cron', cronRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);
