@@ -1,5 +1,8 @@
-const CACHE_NAME = 'digest-cache-v3';
-const CORE_ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
+const CACHE_NAME = 'digest-cache-v4';
+const CORE_ASSETS = [
+  './', './index.html', './styles.css', './app.js', './manifest.json',
+  './icon-192.png', './icon-512.png', './icon-512-maskable.png'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
