@@ -1,8 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { generateText, extractJson } from '../lib/gemini.js';
+import { mapWithConcurrency } from '../lib/concurrency.js';
 import { config } from '../config.js';
 
 const MAX_ITEMS_PER_CATEGORY = 5;
+// Batchs traités en parallèle — au-delà, risque de multiplier les 429 (quota RPM du free tier
+// Gemini) plus vite qu'on ne gagne en temps total, même avec le retry/backoff en place.
+const BATCH_CONCURRENCY = 3;
 
 // --- Passe 1 : tri rapide sur titre/sujet, sortie minimale (pas de résumé/justification détaillée) ---
 const QUICK_FILTER_PROMPT = `Tu es un assistant de tri rapide. Tu reçois un lot d'articles et de
@@ -138,60 +142,66 @@ function capPerCategory(items, max = MAX_ITEMS_PER_CATEGORY) {
  * Retourne les items filtrés (score_pertinence >= 6 OU signal_fort), plafonnés à
  * MAX_ITEMS_PER_CATEGORY par catégorie, avec un id Firestore stable.
  */
+async function processBatch(batch, index, total, profil) {
+  const knownEmailIds = new Set(batch.map((e) => e.id));
+  const batchContent = formatBatch(batch);
+  const label = `Batch ${index + 1}/${total}`;
+
+  console.log(`[curation] ${label} — tri rapide par titre...`);
+  let candidates;
+  try {
+    const text = await generateText({
+      model: config.models.curation,
+      systemPrompt: QUICK_FILTER_PROMPT,
+      userPrompt: buildQuickFilterPrompt(profil, batchContent),
+      maxOutputTokens: 16384,
+      thinkingBudget: 0
+    });
+    candidates = extractJson(text).items || [];
+  } catch (err) {
+    console.warn(`[curation] ${label} — tri rapide échoué :`, err.message);
+    return [];
+  }
+
+  const retenus = candidates.filter((c) => c.pertinent || c.signal_fort_probable);
+  console.log(`[curation] ${label} — ${retenus.length}/${candidates.length} titre(s) retenu(s) pour lecture complète`);
+
+  if (retenus.length === 0) return [];
+
+  let parsed;
+  try {
+    const text = await generateText({
+      model: config.models.curation,
+      systemPrompt: FULL_CURATION_PROMPT,
+      userPrompt: buildFullCurationPrompt(profil, batchContent, retenus.map((r) => r.titre)),
+      maxOutputTokens: 32768,
+      thinkingBudget: 0
+    });
+    parsed = extractJson(text);
+  } catch (err) {
+    console.warn(`[curation] ${label} — lecture complète échouée :`, err.message);
+    return [];
+  }
+
+  const items = (parsed.items || []).map((item) => {
+    const emailId = knownEmailIds.has(item.email_id) ? item.email_id : null;
+    return {
+      ...item,
+      id: randomUUID(),
+      url_newsletter: emailId ? `https://mail.google.com/mail/u/0/#all/${emailId}` : null
+    };
+  });
+  console.log(`[curation] ${label} OK — ${items.length} item(s) traités`);
+  return items;
+}
+
 export async function curateItems(emails, profil) {
   const batches = batchEmails(emails);
-  const allItems = [];
 
-  for (const [index, batch] of batches.entries()) {
-    const knownEmailIds = new Set(batch.map((e) => e.id));
-    const batchContent = formatBatch(batch);
-
-    console.log(`[curation] Batch ${index + 1}/${batches.length} — tri rapide par titre...`);
-    let candidates;
-    try {
-      const text = await generateText({
-        model: config.models.curation,
-        systemPrompt: QUICK_FILTER_PROMPT,
-        userPrompt: buildQuickFilterPrompt(profil, batchContent),
-        maxOutputTokens: 16384,
-        thinkingBudget: 0
-      });
-      candidates = extractJson(text).items || [];
-    } catch (err) {
-      console.warn(`[curation] Batch ${index + 1} — tri rapide échoué :`, err.message);
-      continue;
-    }
-
-    const retenus = candidates.filter((c) => c.pertinent || c.signal_fort_probable);
-    console.log(`[curation] Batch ${index + 1} — ${retenus.length}/${candidates.length} titre(s) retenu(s) pour lecture complète`);
-
-    if (retenus.length === 0) continue;
-
-    let parsed;
-    try {
-      const text = await generateText({
-        model: config.models.curation,
-        systemPrompt: FULL_CURATION_PROMPT,
-        userPrompt: buildFullCurationPrompt(profil, batchContent, retenus.map((r) => r.titre)),
-        maxOutputTokens: 32768,
-        thinkingBudget: 0
-      });
-      parsed = extractJson(text);
-    } catch (err) {
-      console.warn(`[curation] Batch ${index + 1} — lecture complète échouée :`, err.message);
-      continue;
-    }
-
-    for (const item of parsed.items || []) {
-      const emailId = knownEmailIds.has(item.email_id) ? item.email_id : null;
-      allItems.push({
-        ...item,
-        id: randomUUID(),
-        url_newsletter: emailId ? `https://mail.google.com/mail/u/0/#all/${emailId}` : null
-      });
-    }
-    console.log(`[curation] Batch ${index + 1}/${batches.length} OK — ${parsed.items?.length || 0} item(s) traités`);
-  }
+  const results = await mapWithConcurrency(batches, BATCH_CONCURRENCY, (batch, index) =>
+    processBatch(batch, index, batches.length, profil)
+  );
+  const allItems = results.flat();
 
   const filtered = allItems.filter((item) => item.score_pertinence >= 6 || item.signal_fort === true);
   const capped = capPerCategory(filtered);
