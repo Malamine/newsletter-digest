@@ -29,6 +29,27 @@ async function findItemsARelancer(currentWeek) {
   return found;
 }
 
+// Stocke le HTML brut des emails référencés par au moins un item retenu (pas tous les emails
+// ingérés — seulement ceux dont un item pointe vers eux via email_id, pour éviter d'accumuler
+// du HTML inutile en Firestore).
+async function saveReferencedNewsletterHtml(emails, itemsRetenus) {
+  const referencedIds = new Set(itemsRetenus.map((i) => i.email_id).filter(Boolean));
+  if (referencedIds.size === 0) return;
+
+  const batch = db.batch();
+  for (const email of emails) {
+    if (!referencedIds.has(email.id)) continue;
+    batch.set(db.collection('newsletter_html').doc(email.id), {
+      titre: email.titre,
+      source: email.source,
+      date: email.date,
+      html: email.html || ''
+    });
+  }
+  await batch.commit();
+  console.log(`[pipeline] HTML de ${referencedIds.size} email(s) sauvegardé(s)`);
+}
+
 async function getConceptsPourRenforcement() {
   const snapshot = await db.collection('concepts_couverts').orderBy('nb_fois_pas_su', 'desc').limit(20).get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -48,6 +69,8 @@ export async function runWeeklyPipeline() {
 
   const itemsRetenus = await curateItems(emails, profil);
   console.log(`[pipeline] Étape 1 (curation) terminée — ${itemsRetenus.length} item(s) retenu(s)`);
+
+  await saveReferencedNewsletterHtml(emails, itemsRetenus);
 
   const conseils = await generateConseils(itemsRetenus, profil);
   console.log(`[pipeline] Étape 2 (conseil) terminée — ${Object.keys(conseils).length} conseil(s) généré(s)`);
@@ -69,7 +92,7 @@ export async function runWeeklyPipeline() {
       signal_fort: item.signal_fort,
       resume: item.resume || '',
       justification: item.justification,
-      url_newsletter: item.url_newsletter || null,
+      email_id: item.email_id || null,
       conseil: conseils[item.id] || '',
       consulte: false,
       date_consultation: null,

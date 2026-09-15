@@ -5,6 +5,7 @@ import { digestRouter } from './routes/digest.js';
 import { quizRouter } from './routes/quiz.js';
 import { itemsRouter } from './routes/items.js';
 import { pushRouter } from './routes/push.js';
+import { newslettersRouter } from './routes/newsletters.js';
 
 const app = express();
 
@@ -23,7 +24,8 @@ app.get('/', (req, res) => {
       'POST /items/:id/consulte',
       'POST /quiz/reponses',
       'GET /push/vapid-public-key',
-      'POST /push/subscriptions'
+      'POST /push/subscriptions',
+      'GET /newsletters/:id'
     ]
   });
 });
@@ -32,6 +34,7 @@ app.use('/digest', digestRouter);
 app.use('/quiz', quizRouter);
 app.use('/items', itemsRouter);
 app.use('/push', pushRouter);
+app.use('/newsletters', newslettersRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

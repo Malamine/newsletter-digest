@@ -24,25 +24,32 @@ function stripHtml(html) {
     .trim();
 }
 
-function extractBody(payload) {
-  if (!payload) return '';
-
-  const collectParts = (part, acc = { text: '', html: '' }) => {
-    if (part.parts) {
-      part.parts.forEach((p) => collectParts(p, acc));
-      return acc;
-    }
-    if (!part.body?.data) return acc;
-    const decoded = decodeBase64Url(part.body.data);
-    if (part.mimeType === 'text/plain') acc.text += decoded + '\n';
-    if (part.mimeType === 'text/html') acc.html += decoded + '\n';
+function collectParts(part, acc = { text: '', html: '' }) {
+  if (part.parts) {
+    part.parts.forEach((p) => collectParts(p, acc));
     return acc;
-  };
+  }
+  if (!part.body?.data) return acc;
+  const decoded = decodeBase64Url(part.body.data);
+  if (part.mimeType === 'text/plain') acc.text += decoded + '\n';
+  if (part.mimeType === 'text/html') acc.html += decoded + '\n';
+  return acc;
+}
 
+/** Texte brut pour les prompts LLM (moins de tokens que le HTML complet). */
+function extractText(payload) {
+  if (!payload) return '';
   const { text, html } = collectParts(payload);
   if (text.trim()) return text.trim();
   if (html.trim()) return stripHtml(html);
   return '';
+}
+
+/** HTML brut pour l'affichage côté front (rendu dans un iframe sandboxé). */
+function extractHtml(payload) {
+  if (!payload) return '';
+  const { html } = collectParts(payload);
+  return html.trim();
 }
 
 function header(headers, name) {
@@ -87,7 +94,8 @@ export async function fetchNewsletterEmails(days = 7) {
       titre: subject,
       source: from.replace(/<.*>/, '').trim() || from,
       date: dateHeader ? new Date(dateHeader).toISOString() : new Date().toISOString(),
-      contenu: extractBody(msgRes.data.payload).slice(0, 20000) // garde-fou taille par item
+      contenu: extractText(msgRes.data.payload).slice(0, 20000), // garde-fou taille par item (prompt LLM)
+      html: extractHtml(msgRes.data.payload).slice(0, 800000) // garde-fou sous la limite doc Firestore (1 Mio)
     });
   }
 

@@ -94,6 +94,7 @@ async function loadDigest() {
     updateStats(allDigestItems, null);
     setupFilterBar(allDigestItems);
     renderFilteredDigest();
+    renderLus();
   } catch (err) {
     loading.textContent = "Impossible de charger le digest pour l'instant.";
     console.error('loadDigest', err);
@@ -141,6 +142,7 @@ function setupFilterBar(items) {
 function renderFilteredDigest() {
   const list = document.getElementById('digest-list');
   const filtered = allDigestItems.filter((item) => {
+    if (item.consulte) return false; // les items lus passent dans l'onglet "Lus"
     if (filterState.signalOnly && !item.signal_fort) return false;
     if (filterState.categories.size > 0 && !filterState.categories.has(item.categorie)) return false;
     if (Number(item.score_pertinence) < filterState.minScore) return false;
@@ -148,12 +150,22 @@ function renderFilteredDigest() {
   });
 
   if (filtered.length === 0) {
-    list.innerHTML = '<p class="empty-state">Aucun item ne correspond à ces filtres.</p>';
+    list.innerHTML = '<p class="empty-state">Aucun item ne correspond à ces filtres (ou tout a été lu — regarde l\'onglet "Lus").</p>';
     return;
   }
 
   list.innerHTML = filtered.map((item) => renderItemCard(item, allDigestRelanceIds)).join('');
-  wireItemCards();
+  wireItemCards(list);
+}
+
+function renderLus() {
+  const list = document.getElementById('lus-list');
+  const empty = document.getElementById('lus-empty');
+  const lus = allDigestItems.filter((item) => item.consulte);
+
+  empty.hidden = lus.length > 0;
+  list.innerHTML = lus.map((item) => renderItemCard(item, allDigestRelanceIds)).join('');
+  wireItemCards(list);
 }
 
 function renderItemCard(item, relanceIds) {
@@ -174,13 +186,13 @@ function renderItemCard(item, relanceIds) {
       <h2>${escapeHtml(item.titre)}</h2>
       <p class="source">${escapeHtml(item.source)}</p>
       <p class="justification">${escapeHtml(description)}</p>
-      ${item.url_newsletter ? `<a class="newsletter-link" href="${item.url_newsletter}" target="_blank" rel="noopener">Lire la newsletter →</a>` : ''}
+      ${item.email_id ? `<button class="newsletter-link" data-email-id="${escapeHtml(item.email_id)}" data-titre="${escapeHtml(item.titre)}">Lire la newsletter →</button>` : ''}
       ${item.conseil ? `
       <details class="conseil">
         <summary>Voir le conseil</summary>
         <p>${escapeHtml(item.conseil)}</p>
       </details>` : ''}
-      <button class="mark-read-btn">${item.consulte ? 'Lu' : 'Marquer comme lu'}</button>
+      ${item.consulte ? '' : '<button class="mark-read-btn">Marquer comme lu</button>'}
     </article>
   `;
 }
@@ -195,8 +207,8 @@ function updateStats(items, questionsCount) {
   }
 }
 
-function wireItemCards() {
-  document.querySelectorAll('.mark-read-btn').forEach((btn) => {
+function wireItemCards(container) {
+  container.querySelectorAll('.mark-read-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const card = btn.closest('.item-card');
       const id = card.dataset.id;
@@ -204,19 +216,44 @@ function wireItemCards() {
       try {
         const res = await fetch(`${BACKEND_URL}/items/${id}/consulte`, { method: 'POST' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        card.classList.add('read');
-        btn.textContent = 'Lu';
         const item = allDigestItems.find((i) => i.id === id);
         if (item) item.consulte = true;
+        // L'item disparaît de la liste courante (Digest) et devient accessible dans "Lus".
+        renderFilteredDigest();
+        renderLus();
       } catch (err) {
         console.error('mark-read', err);
         alert("Impossible de marquer l'item comme lu pour l'instant.");
-      } finally {
         btn.disabled = false;
       }
     });
   });
+
+  container.querySelectorAll('.newsletter-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      openNewsletterModal(btn.dataset.emailId, btn.dataset.titre);
+    });
+  });
 }
+
+function openNewsletterModal(emailId, titre) {
+  if (!emailId) return;
+  const modal = document.getElementById('newsletter-modal');
+  const iframe = document.getElementById('modal-iframe');
+  document.getElementById('modal-title').textContent = titre || 'Newsletter';
+  iframe.src = `${BACKEND_URL}/newsletters/${emailId}`;
+  modal.hidden = false;
+}
+
+function closeNewsletterModal() {
+  document.getElementById('newsletter-modal').hidden = true;
+  document.getElementById('modal-iframe').src = '';
+}
+
+document.getElementById('modal-close').addEventListener('click', closeNewsletterModal);
+document.getElementById('newsletter-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'newsletter-modal') closeNewsletterModal();
+});
 
 // --- Chargement du quiz ---
 async function loadQuiz() {

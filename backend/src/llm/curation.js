@@ -183,14 +183,11 @@ async function processBatch(batch, index, total, profil) {
     return [];
   }
 
-  const items = (parsed.items || []).map((item) => {
-    const emailId = knownEmailIds.has(item.email_id) ? item.email_id : null;
-    return {
-      ...item,
-      id: randomUUID(),
-      url_newsletter: emailId ? `https://mail.google.com/mail/u/0/#all/${emailId}` : null
-    };
-  });
+  const items = (parsed.items || []).map((item) => ({
+    ...item,
+    id: randomUUID(),
+    email_id: knownEmailIds.has(item.email_id) ? item.email_id : null
+  }));
   console.log(`[curation] ${label} OK — ${items.length} item(s) traités`);
   return items;
 }
