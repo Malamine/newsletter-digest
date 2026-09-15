@@ -23,6 +23,11 @@
 
 *{box-sizing:border-box;}
 
+/* [hidden] a une spécificité trop faible face à nos règles `display:flex` (.modal-overlay,
+   .install-banner) — sans ce !important, ces éléments restent visibles même avec l'attribut
+   hidden posé, puisque la déclaration display la plus tardive dans la cascade gagne. */
+[hidden]{display:none!important;}
+
 html,body{
   margin:0;
   min-height:100%;
