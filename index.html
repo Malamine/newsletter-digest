@@ -52,6 +52,7 @@
   <nav class="tabs">
     <button class="tab active" data-tab="digest">Digest</button>
     <button class="tab" data-tab="quiz">Quiz</button>
+    <button class="tab" data-tab="lus">Lus</button>
   </nav>
 
   <section id="panel-digest" class="panel active">
@@ -77,6 +78,21 @@
     <p class="empty-state" id="quiz-loading">Chargement du quiz…</p>
   </section>
 
+  <section id="panel-lus" class="panel">
+    <div id="lus-list"></div>
+    <p class="empty-state" id="lus-empty">Aucun item lu pour l'instant — ils arrivent ici une fois marqués comme lus dans le Digest.</p>
+  </section>
+
+</div>
+
+<div class="modal-overlay" id="newsletter-modal" hidden>
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="modal-title">Newsletter</span>
+      <button class="modal-close" id="modal-close" aria-label="Fermer">✕</button>
+    </div>
+    <iframe id="modal-iframe" class="modal-iframe" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+  </div>
 </div>
 
 <script src="app.js"></script>
