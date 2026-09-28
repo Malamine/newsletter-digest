@@ -1,7 +1,8 @@
-const CACHE_NAME = 'digest-cache-v7';
+const CACHE_NAME = 'digest-cache-v8';
 const CORE_ASSETS = [
   './', './index.html', './styles.css', './app.js', './manifest.json',
-  './icon-192.png', './icon-512.png', './icon-512-maskable.png'
+  './icon-192.png', './icon-512.png', './icon-512-maskable.png',
+  './privacy/'
 ];
 
 self.addEventListener('install', (event) => {

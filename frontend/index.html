@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1e1b4b">
-<title>Digest</title>
+<title>Newsletter Digest</title>
+<meta name="description" content="Newsletter Digest est un outil personnel qui résume chaque semaine mes newsletters (label Gmail « NEWSLETTER »), filtre le bruit et génère un quiz pour retenir les concepts clés.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -22,7 +23,8 @@
   <header class="topbar">
     <div class="topbar-title">
       <span class="week-tag" id="week-tag">—</span>
-      <h1>Digest de la semaine</h1>
+      <h1>Newsletter Digest</h1>
+      <p class="app-intro">Résumé hebdomadaire de mes newsletters (Gmail, label « NEWSLETTER »), filtré par pertinence, avec un quiz pour retenir les concepts clés. Outil personnel, à usage individuel.</p>
     </div>
     <button class="icon-btn" id="notif-btn" aria-label="Notifications" title="Activer les notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -82,6 +84,10 @@
     <div id="lus-list"></div>
     <p class="empty-state" id="lus-empty">Aucun item lu pour l'instant — ils arrivent ici une fois marqués comme lus dans le Digest.</p>
   </section>
+
+  <footer class="site-footer">
+    <span>Newsletter Digest</span> · <a href="privacy/">Politique de confidentialité</a>
+  </footer>
 
 </div>
 
