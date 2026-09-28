@@ -12,9 +12,9 @@ export const config = {
 
   geminiApiKey: required('GEMINI_API_KEY', process.env.GEMINI_API_KEY),
   models: {
-    curation: process.env.MODEL_CURATION || 'gemini-2.5-flash',
-    conseil: process.env.MODEL_CONSEIL || 'gemini-2.5-flash',
-    quiz: process.env.MODEL_QUIZ || 'gemini-2.5-flash'
+    curation: process.env.MODEL_CURATION || 'gemini-3.8-flash',
+    conseil: process.env.MODEL_CONSEIL || 'gemini-3.8-flash',
+    quiz: process.env.MODEL_QUIZ || 'gemini-3.8-flash'
   },
 
   gmail: {
