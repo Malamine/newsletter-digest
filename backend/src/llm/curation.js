@@ -95,7 +95,10 @@ function buildFullCurationPrompt(profil, contenuBrut, titresRetenus) {
   return `--- PROFIL UTILISATEUR ---\n${profil}\n\n--- TITRES À TRAITER ---\n${titresRetenus.map((t) => `- ${t}`).join('\n')}\n\n--- CONTENU DE LA SEMAINE ---\n${contenuBrut}`;
 }
 
-function batchEmails(emails, batchSize = 4) {
+// Volontairement gros : le free tier gemini-3.8-flash n'autorise que 20 requêtes/jour au total,
+// donc minimiser le nombre d'appels prime sur la prudence "petits batchs" d'avant (compensé par
+// le tri en 2 passes + un maxOutputTokens élevé, qui évitaient déjà la troncature JSON).
+function batchEmails(emails, batchSize = 12) {
   const batches = [];
   for (let i = 0; i < emails.length; i += batchSize) {
     batches.push(emails.slice(i, i + batchSize));
@@ -174,7 +177,7 @@ async function processBatch(batch, index, total, profil) {
       model: config.models.curation,
       systemPrompt: FULL_CURATION_PROMPT,
       userPrompt: buildFullCurationPrompt(profil, batchContent, retenus.map((r) => r.titre)),
-      maxOutputTokens: 32768,
+      maxOutputTokens: 65536,
       thinkingBudget: 0
     });
     parsed = extractJson(text);

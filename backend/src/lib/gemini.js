@@ -3,9 +3,16 @@ import { config } from '../config.js';
 
 const genai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
-// 429 (quota RPM dépassé) et 503 (modèle temporairement surchargé côté Google) sont tous les
-// deux transitoires — ça vaut le coup de réessayer avec backoff plutôt que de planter le run.
+// Un 429 sur un quota JOURNALIER ("PerDay") ne se résoudra pas en 30s — retenter ne fait que
+// cramer encore plus du quota déjà épuisé pour la journée. On échoue vite dans ce cas précis.
+function isDailyQuotaExhausted(err) {
+  return /PerDay|per[- ]day/i.test(err?.message || '');
+}
+
+// 429 (quota RPM/burst dépassé) et 503 (modèle temporairement surchargé côté Google) sont
+// transitoires — ça vaut le coup de réessayer avec backoff, sauf si c'est un quota journalier.
 function isRetryableError(err) {
+  if (isDailyQuotaExhausted(err)) return false;
   const status = err?.status ?? err?.code ?? err?.response?.status;
   if (status === 429 || status === 503) return true;
   return /RESOURCE_EXHAUSTED|rate.?limit|UNAVAILABLE|high demand/i.test(err?.message || '');
