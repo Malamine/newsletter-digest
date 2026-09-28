@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e1b4b">
+<title>Politique de confidentialité — Newsletter Digest</title>
+<link rel="icon" href="../icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0e0b26; --bg-2:#1e1b4b;
+    --text-primary:#f6f5ff; --text-secondary:#bcb8e6; --text-muted:#8783b3;
+    --accent-strong:#a5b4fc; --glass-border:rgba(255,255,255,0.16);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:var(--text-primary);
+    font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2{font-family:'Sora','Plus Jakarta Sans',sans-serif;}
+  main{max-width:680px;margin:0 auto;padding:32px 20px 64px;}
+  h1{font-size:24px;margin-bottom:4px;}
+  .updated{color:var(--text-muted);font-size:13px;margin-bottom:32px;}
+  h2{font-size:16px;margin-top:32px;margin-bottom:10px;color:var(--accent-strong);}
+  p,li{font-size:14px;line-height:1.65;color:var(--text-secondary);}
+  ul{padding-left:20px;}
+  a{color:var(--accent-strong);}
+  .back{display:inline-block;margin-top:40px;font-size:13px;color:var(--text-muted);}
+</style>
+</head>
+<body>
+<main>
+  <h1>Politique de confidentialité — Newsletter Digest</h1>
+  <p class="updated">Dernière mise à jour : 28 septembre 2026</p>
+
+  <p>Newsletter Digest est un outil <strong>personnel</strong>, développé et utilisé par une seule personne (son créateur) pour résumer automatiquement ses propres newsletters. Il n'est pas distribué au grand public, ne comporte pas de création de compte, et ne collecte de données que pour son propre usage.</p>
+
+  <h2>Quelles données sont consultées</h2>
+  <p>L'application se connecte à une boîte Gmail via l'API Gmail (accès en lecture seule, permission <code>gmail.readonly</code>) pour lire uniquement les emails portant le label <strong>« NEWSLETTER »</strong>. Aucun autre email n'est consulté, envoyé, modifié ou supprimé. L'application ne peut pas écrire dans la boîte mail ni agir en son nom.</p>
+
+  <h2>Comment ces données sont utilisées</h2>
+  <ul>
+    <li>Le contenu des emails du label NEWSLETTER est envoyé à l'API Gemini (Google) pour être trié, résumé et transformé en questions de quiz.</li>
+    <li>Les résultats (titres, résumés, scores de pertinence, questions de quiz) sont stockés dans une base de données Firestore privée, hébergée sur un projet Google Cloud appartenant au créateur de l'application.</li>
+    <li>Aucune donnée n'est vendue, partagée avec des tiers à des fins commerciales, ou utilisée à des fins publicitaires.</li>
+  </ul>
+
+  <h2>Autres données stockées</h2>
+  <ul>
+    <li><strong>Réponses au quiz</strong> : auto-évaluations ("su" / "pas su") liées aux questions générées, pour suivre la progression d'apprentissage.</li>
+    <li><strong>Abonnement aux notifications</strong> : si les notifications push sont activées, un identifiant d'abonnement technique (endpoint + clés de chiffrement, standard Web Push) est stocké pour pouvoir envoyer des rappels.</li>
+    <li><strong>Statut de lecture</strong> : quels articles du digest ont été marqués comme lus.</li>
+  </ul>
+
+  <h2>Conservation et suppression</h2>
+  <p>Les données sont conservées indéfiniment dans la base Firestore privée du projet, dans le seul but de constituer un historique utile au fonctionnement de l'application (éviter les répétitions, mesurer la progression). Étant un outil strictement personnel, la suppression de données se fait directement par le créateur de l'application via la console Google Cloud.</p>
+
+  <h2>Tiers impliqués</h2>
+  <p>Les seuls services tiers utilisés sont des services d'infrastructure Google : Gmail API (lecture des emails), Gemini API (traitement du texte), Google Cloud Run et Firestore (hébergement et stockage). Ces services traitent les données dans le cadre de leurs propres conditions d'utilisation en tant que sous-traitants techniques ; aucune donnée n'est transmise à d'autres tiers.</p>
+
+  <h2>Contact</h2>
+  <p>Cette application n'ayant qu'un seul utilisateur (son créateur), les questions relatives à cette politique peuvent être adressées via le dépôt du projet : <a href="https://github.com/Malamine/newsletter-digest" target="_blank" rel="noopener">github.com/Malamine/newsletter-digest</a>.</p>
+
+  <a class="back" href="../">← Retour à l'application</a>
+</main>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "name": "Digest Newsletter",
+  "name": "Newsletter Digest",
   "short_name": "Digest",
   "start_url": "./index.html",
   "display": "standalone",
