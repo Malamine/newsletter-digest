@@ -3,9 +3,12 @@ import { config } from '../config.js';
 
 const genai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
-function isRateLimitError(err) {
+// 429 (quota RPM dépassé) et 503 (modèle temporairement surchargé côté Google) sont tous les
+// deux transitoires — ça vaut le coup de réessayer avec backoff plutôt que de planter le run.
+function isRetryableError(err) {
   const status = err?.status ?? err?.code ?? err?.response?.status;
-  return status === 429 || /RESOURCE_EXHAUSTED|rate.?limit/i.test(err?.message || '');
+  if (status === 429 || status === 503) return true;
+  return /RESOURCE_EXHAUSTED|rate.?limit|UNAVAILABLE|high demand/i.test(err?.message || '');
 }
 
 async function generateContentWithBackoff(params, { maxRetries = 5, baseDelayMs = 2000 } = {}) {
@@ -13,9 +16,9 @@ async function generateContentWithBackoff(params, { maxRetries = 5, baseDelayMs 
     try {
       return await genai.models.generateContent(params);
     } catch (err) {
-      if (!isRateLimitError(err) || attempt >= maxRetries) throw err;
+      if (!isRetryableError(err) || attempt >= maxRetries) throw err;
       const delay = baseDelayMs * 2 ** attempt + Math.random() * 500;
-      console.warn(`Gemini 429 — retry ${attempt + 1}/${maxRetries} dans ${Math.round(delay)}ms`);
+      console.warn(`Gemini erreur transitoire (${err?.status ?? '?'}) — retry ${attempt + 1}/${maxRetries} dans ${Math.round(delay)}ms`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
