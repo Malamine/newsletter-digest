@@ -1,4 +1,4 @@
-const CACHE_NAME = 'digest-cache-v8';
+const CACHE_NAME = 'digest-cache-v9';
 const CORE_ASSETS = [
   './', './index.html', './styles.css', './app.js', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-512-maskable.png',
