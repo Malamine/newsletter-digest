@@ -4,9 +4,12 @@ import { mapWithConcurrency } from '../lib/concurrency.js';
 import { config } from '../config.js';
 
 const MAX_ITEMS_PER_CATEGORY = 5;
-// Batchs traités en parallèle — au-delà, risque de multiplier les 429 (quota RPM du free tier
-// Gemini) plus vite qu'on ne gagne en temps total, même avec le retry/backoff en place.
-const BATCH_CONCURRENCY = 3;
+// Séquentiel strict : des appels simultanés sur le free tier gemini-3.8-flash déclenchent un 429
+// même quand le quota journalier est loin d'être épuisé (observé : un seul appel passe, deux en
+// parallèle échouent tous les deux instantanément) — le free tier semble limiter les requêtes
+// concurrentes, pas seulement le total par jour. batchEmails() garde des gros batchs (peu
+// d'appels au total) pour compenser la perte de parallélisme.
+const BATCH_CONCURRENCY = 1;
 
 // --- Passe 1 : tri rapide sur titre/sujet, sortie minimale (pas de résumé/justification détaillée) ---
 const QUICK_FILTER_PROMPT = `Tu es un assistant de tri rapide. Tu reçois un lot d'articles et de
