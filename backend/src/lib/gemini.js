@@ -3,6 +3,12 @@ import { config } from '../config.js';
 
 const genai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
+// Le quota free tier ("20 requêtes/jour") est scopé PAR MODÈLE (metric
+// GenerateRequestsPerDayPerProjectPerModel-FreeTier) — épuiser un modèle ne touche pas le quota
+// des autres. Liste de repli essayée dans l'ordre si le modèle demandé échoue ; chacun a son
+// propre compteur, donc le budget effectif se multiplie par le nombre de modèles de la liste.
+const FALLBACK_MODELS = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite'];
+
 // Un 429 sur un quota JOURNALIER ("PerDay") ne se résoudra pas en 30s — retenter ne fait que
 // cramer encore plus du quota déjà épuisé pour la journée. On échoue vite dans ce cas précis.
 function isDailyQuotaExhausted(err) {
@@ -40,22 +46,37 @@ async function generateContentWithBackoff(params, { maxRetries = 5, baseDelayMs 
  * pour un dépassement de quota par minute ponctuel.
  */
 export async function generateText({ model, systemPrompt, userPrompt, maxOutputTokens = 32768, thinkingBudget }) {
-  const response = await generateContentWithBackoff({
-    model,
-    contents: userPrompt,
-    config: {
-      systemInstruction: systemPrompt,
-      maxOutputTokens,
-      ...(thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget } } : {})
-    }
-  });
+  const modelsToTry = [model, ...FALLBACK_MODELS.filter((m) => m !== model)];
+  let lastErr;
 
-  if (!response.text) {
-    const finishReason = response.candidates?.[0]?.finishReason;
-    throw new Error(`Réponse Gemini vide (finishReason: ${finishReason || 'inconnu'}).`);
+  for (const currentModel of modelsToTry) {
+    try {
+      const response = await generateContentWithBackoff({
+        model: currentModel,
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemPrompt,
+          maxOutputTokens,
+          ...(thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget } } : {})
+        }
+      });
+
+      if (!response.text) {
+        const finishReason = response.candidates?.[0]?.finishReason;
+        throw new Error(`Réponse Gemini vide (finishReason: ${finishReason || 'inconnu'}).`);
+      }
+
+      if (currentModel !== model) {
+        console.warn(`[gemini] Repli sur ${currentModel} (${model} indisponible)`);
+      }
+      return response.text;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[gemini] ${currentModel} a échoué (${err.message.slice(0, 100)}) — modèle suivant...`);
+    }
   }
 
-  return response.text;
+  throw lastErr;
 }
 
 export function extractJson(text) {
